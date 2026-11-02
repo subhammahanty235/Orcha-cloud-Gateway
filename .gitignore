@@ -1,0 +1,20 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Build output
+/bin/
+/gateway
+*.test
+*.out
+
+# Model weights and logs
+*.gguf
+*.log
+
+# Local tooling
+.DS_Store
+.idea/
+.vscode/
+.claude/
