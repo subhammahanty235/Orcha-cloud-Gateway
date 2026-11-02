@@ -6,22 +6,28 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/subhammahanty235/orcha-gateway/internal/inference"
 )
 
 // Server holds the dependencies shared by the HTTP handlers.
 type Server struct {
-	logger *slog.Logger
+	logger          *slog.Logger
+	inference       *inference.Client
+	maxRequestBytes int64
 }
 
-// New returns a Server that logs to logger.
-func New(logger *slog.Logger) *Server {
-	return &Server{logger: logger}
+// New returns a Server that forwards inference requests to client and rejects
+// request bodies larger than maxRequestBytes.
+func New(logger *slog.Logger, client *inference.Client, maxRequestBytes int64) *Server {
+	return &Server{logger: logger, inference: client, maxRequestBytes: maxRequestBytes}
 }
 
 // Handler returns the gateway's routes wrapped in request logging.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", s.handleHealth)
+	mux.HandleFunc("POST /v1/chat/completions", s.handleChatCompletions)
 	return s.logRequests(mux)
 }
 

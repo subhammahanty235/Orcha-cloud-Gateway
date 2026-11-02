@@ -8,10 +8,23 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/subhammahanty235/orcha-gateway/internal/inference"
 )
 
+func testLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
+
+// newHealthServer returns a Server with an unreachable backend, because /health
+// has to report healthy without one.
+func newHealthServer(logger *slog.Logger) *Server {
+	return New(logger, inference.NewClient("http://127.0.0.1:1", time.Second), 1<<20)
+}
+
 func TestHealth(t *testing.T) {
-	srv := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	srv := newHealthServer(testLogger())
 
 	rec := httptest.NewRecorder()
 	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
@@ -28,7 +41,7 @@ func TestHealth(t *testing.T) {
 }
 
 func TestHealthRejectsOtherMethods(t *testing.T) {
-	srv := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	srv := newHealthServer(testLogger())
 
 	rec := httptest.NewRecorder()
 	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/health", nil))
@@ -40,7 +53,7 @@ func TestHealthRejectsOtherMethods(t *testing.T) {
 
 func TestLogRequestsOmitsCredentials(t *testing.T) {
 	var logs bytes.Buffer
-	srv := New(slog.New(slog.NewTextHandler(&logs, nil)))
+	srv := newHealthServer(slog.New(slog.NewTextHandler(&logs, nil)))
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	req.Header.Set("Authorization", "Bearer secret-token")

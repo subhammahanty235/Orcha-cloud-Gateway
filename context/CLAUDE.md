@@ -434,18 +434,29 @@ Verified complete:
 -   Inference server is bound to `127.0.0.1:8080`.
 -   SSH tunnel from local machine to inference server works.
 
+-   Gateway repository initialized and pushed to
+    `github.com/subhammahanty235/Orcha-cloud-Gateway` (branch `main`).
+-   Gateway server with `GET /health` (liveness only) and non-streaming
+    `POST /v1/chat/completions` proxy, tested locally against fake
+    upstreams.
+
 Not yet confirmed complete:
 
--   Local Go gateway repository initialization.
--   Gateway implementation.
--   Gateway systemd service.
+-   Gateway run against the real llama-server.
+-   `GET /v1/models`.
+-   Gateway deployment to the VM and gateway systemd service.
 -   Public reverse proxy / TLS.
 -   Database, Redis, monitoring, or frontend.
 
-**Immediate task:** inspect the local gateway repository. If it is
-empty, initialize a Go module and create the minimal `net/http` server
-with `/health`. Then add the inference client and `/v1/chat/completions`
-proxy. Keep the first implementation small and testable.
+### Current project state
+
+-   **Active work:** M1, in progress. See `docs/roadmap.md` for status,
+    known gaps, and the session handoff.
+-   **Blockers:** none.
+-   **Next task:** smoke test the chat proxy against the real
+    llama-server through an SSH tunnel, then add `GET /v1/models`.
+-   **Checks:** use `golangci-lint run ./...` for static checks; the
+    locally installed `staticcheck` crashes on Go 1.24 export data.
 
 ## 12. Product naming and scope
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/subhammahanty235/orcha-gateway/internal/config"
 	"github.com/subhammahanty235/orcha-gateway/internal/gateway"
+	"github.com/subhammahanty235/orcha-gateway/internal/inference"
 )
 
 const (
@@ -37,9 +38,11 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	client := inference.NewClient(cfg.InferenceURL, cfg.UpstreamTimeout)
+
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
-		Handler:           gateway.New(logger).Handler(),
+		Handler:           gateway.New(logger, client, cfg.MaxRequestBytes).Handler(),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		// The write deadline starts once the headers are read, so it has to
