@@ -23,3 +23,6 @@
 /key/
 *.key
 *.pem
+
+# Local persona test chats
+/chats/
