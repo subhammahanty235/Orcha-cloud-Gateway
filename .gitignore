@@ -18,3 +18,8 @@
 .idea/
 .vscode/
 .claude/
+
+# SSH keys and certificates
+/key/
+*.key
+*.pem
