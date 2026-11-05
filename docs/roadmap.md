@@ -24,15 +24,16 @@ Done and covered by tests against fake upstreams:
 - Non-streaming `POST /v1/chat/completions` proxy, with error mapping and size limits
 - Client disconnects cancel the upstream request
 
+Smoke-tested against the real `llama-server` through an SSH tunnel (2026-11-06):
+completions, a backend `400` for an oversized prompt passed through, and
+`stream: true` rejected.
+
 Remaining:
 
 - `GET /v1/models`
-- A smoke test against the real `llama-server`
 
 ## Known gaps
 
-- **Not yet run against a real `llama-server`.** Its response and error formats are
-  assumed from its OpenAI-compatible API, not verified through the gateway.
 - No authentication, so the gateway must stay on loopback (M2).
 - No limit on concurrent requests (M3). Inference on 2 OCPU will not handle many
   parallel generations well.
@@ -41,14 +42,14 @@ Remaining:
   error shape.
 - It is unverified whether `llama-server` stops generating when the gateway cancels
   a request.
-- Gateway latency and resource use have not been measured.
+- Gateway overhead and resource use have not been measured. Backend baselines:
+  ~8.9 tokens/sec generation and ~12 tokens/sec prompt processing, so long uncached
+  prompts dominate latency.
 - The gateway has not been deployed to the VM, and there is no systemd unit.
 
 ## Handoff
 
-**Current focus:** M1. The most useful next action is to smoke test the chat proxy
-against the real `llama-server` through an SSH tunnel (commands in the
-[README](../README.md#local-development)), then add `GET /v1/models`.
+**Current focus:** M1. The most useful next action is to add `GET /v1/models`.
 
 **Entry points:** `cmd/gateway/main.go`, `internal/gateway/chat.go`,
 `internal/inference/client.go`.

@@ -72,13 +72,23 @@ the current workload needs.
 -   Build output:
     `/home/ubuntu/Orcha/llama.cpp/build/bin/llama-server`
 -   Model: Qwen 2.5 1.5B Instruct, Q4_K_M GGUF
--   Model path on VM:
-    `/home/ubuntu/Orcha/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
+-   Model path on VM, as reported by llama-server's `/v1/models` on
+    2026-11-06:
+    `/home/ubuntu/minillm/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`.
+    Earlier notes said `/home/ubuntu/Orcha/models/`; the llama.cpp paths
+    below have not been re-checked.
 -   Model was downloaded from the `bartowski/Qwen2.5-1.5B-Instruct-GGUF`
     Hugging Face repository.
 -   CPU inference was tested successfully on the VM.
--   Initial observed generation speed was around 8.8 tokens/sec; this is
-    only a baseline, not a performance guarantee.
+-   Measured through the gateway on 2026-11-06 (baselines, not
+    guarantees):
+    -   Generation: ~8.9 tokens/sec.
+    -   Prompt processing: ~12 tokens/sec, so an uncached 500-token
+        prompt takes ~40s. Prompt caching (`cache_n` in responses)
+        avoids reprocessing a shared prefix.
+    -   llama-server build `b12033`, 4 slots, `n_ctx` 2048. One request
+        can use the full 2048 tokens; larger requests get a 400
+        `exceed_context_size_error`.
 
 ### Inference server service
 
@@ -101,7 +111,8 @@ Expected response:
 {"status":"ok"}
 ```
 
-The service uses approximately this command:
+The service uses approximately this command (the model path is now
+under `/home/ubuntu/minillm/models/`, see above):
 
 ``` bash
 /home/ubuntu/Orcha/llama.cpp/build/bin/llama-server \
@@ -439,10 +450,11 @@ Verified complete:
 -   Gateway server with `GET /health` (liveness only) and non-streaming
     `POST /v1/chat/completions` proxy, tested locally against fake
     upstreams.
+-   Gateway smoke-tested against the real llama-server through an SSH
+    tunnel (2026-11-06).
 
 Not yet confirmed complete:
 
--   Gateway run against the real llama-server.
 -   `GET /v1/models`.
 -   Gateway deployment to the VM and gateway systemd service.
 -   Public reverse proxy / TLS.
@@ -453,8 +465,7 @@ Not yet confirmed complete:
 -   **Active work:** M1, in progress. See `docs/roadmap.md` for status,
     known gaps, and the session handoff.
 -   **Blockers:** none.
--   **Next task:** smoke test the chat proxy against the real
-    llama-server through an SSH tunnel, then add `GET /v1/models`.
+-   **Next task:** add `GET /v1/models`.
 -   **Checks:** use `golangci-lint run ./...` for static checks; the
     locally installed `staticcheck` crashes on Go 1.24 export data.
 
