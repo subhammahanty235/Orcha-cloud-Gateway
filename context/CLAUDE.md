@@ -83,6 +83,11 @@ the current workload needs.
     were checked on the VM on 2026-11-06.
 -   Model was downloaded from the `bartowski/Qwen2.5-1.5B-Instruct-GGUF`
     Hugging Face repository.
+-   The VM also has an abliterated (reduced-refusal) variant of the same
+    1.5B model, converted to `qwen-abliterated-Q4_K_M.gguf` and
+    `qwen-abliterated-f16.gguf` in the same models directory, with the
+    source in `qwen-abliterated-hf/`. As of 2026-11-06 it is not loaded
+    by any service; `minillm.service` runs the original Instruct model.
 -   CPU inference was tested successfully on the VM.
 -   Measured through the gateway on 2026-11-06 (baselines, not
     guarantees):
