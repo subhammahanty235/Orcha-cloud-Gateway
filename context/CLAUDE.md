@@ -54,6 +54,10 @@ the current workload needs.
 -   UFW is enabled.
 -   Default incoming traffic is denied; outgoing traffic is allowed.
 -   SSH TCP port 22 is allowed.
+-   Port 22 is open to the internet and gets constant brute-force
+    attempts (~3,500 failed logins in 24h, checked 2026-11-06).
+    Password and keyboard-interactive auth are off, root login is
+    key-only, and fail2ban is not active.
 -   Do not expose inference or gateway ports directly to the public
     internet.
 -   Do not casually modify firewall rules or SSH configuration in a way
@@ -68,15 +72,15 @@ the current workload needs.
 ### Inference engine
 
 -   Engine: `llama.cpp`
--   Repository on VM: `/home/ubuntu/Orcha/llama.cpp`
+-   Repository on VM: `/home/ubuntu/minillm/llama.cpp`
 -   Build output:
-    `/home/ubuntu/Orcha/llama.cpp/build/bin/llama-server`
+    `/home/ubuntu/minillm/llama.cpp/build/bin/llama-server`
 -   Model: Qwen 2.5 1.5B Instruct, Q4_K_M GGUF
 -   Model path on VM, as reported by llama-server's `/v1/models` on
     2026-11-06:
     `/home/ubuntu/minillm/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`.
-    Earlier notes said `/home/ubuntu/Orcha/models/`; the llama.cpp paths
-    below have not been re-checked.
+    Earlier notes said `/home/ubuntu/Orcha/`; paths and the service name
+    were checked on the VM on 2026-11-06.
 -   Model was downloaded from the `bartowski/Qwen2.5-1.5B-Instruct-GGUF`
     Hugging Face repository.
 -   CPU inference was tested successfully on the VM.
@@ -89,10 +93,18 @@ the current workload needs.
     -   llama-server build `b12033`, 4 slots, `n_ctx` 2048. One request
         can use the full 2048 tokens; larger requests get a 400
         `exceed_context_size_error`.
+    -   The 2048-token KV cache is shared by all 4 slots. When two
+        conversations together exceed it, they evict each other's
+        cached prompt (`failed to restore kv cache` in the service
+        log), and every turn reprocesses the full prompt: ~1400
+        tokens took ~115s. Observed on 2026-11-06 with two ~1400-token
+        chats alternating.
 
 ### Inference server service
 
-The inference server is managed by systemd as `Orcha.service`.
+The inference server is managed by systemd as `minillm.service`
+(`/etc/systemd/system/minillm.service`). Earlier notes called it
+`Orcha.service`, which does not exist on the VM.
 
 It listens only on:
 
@@ -111,12 +123,11 @@ Expected response:
 {"status":"ok"}
 ```
 
-The service uses approximately this command (the model path is now
-under `/home/ubuntu/minillm/models/`, see above):
+The service runs this command (verified with `ps` on 2026-11-06):
 
 ``` bash
-/home/ubuntu/Orcha/llama.cpp/build/bin/llama-server \
-  -m /home/ubuntu/Orcha/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+/home/ubuntu/minillm/llama.cpp/build/bin/llama-server \
+  -m /home/ubuntu/minillm/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
   --host 127.0.0.1 \
   --port 8080 \
   -c 2048 \
@@ -440,7 +451,7 @@ Verified complete:
 -   llama.cpp compiled successfully on ARM64.
 -   Qwen 2.5 1.5B Q4_K_M model downloaded.
 -   Terminal inference tested successfully.
--   llama-server running as `Orcha.service`.
+-   llama-server running as `minillm.service`.
 -   llama-server health endpoint returns `{"status":"ok"}`.
 -   Inference server is bound to `127.0.0.1:8080`.
 -   SSH tunnel from local machine to inference server works.
